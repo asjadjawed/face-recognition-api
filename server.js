@@ -82,9 +82,15 @@ app.post("/register", (req, res) => {
     .then(hash => {
       req.body.user.password = hash;
       database.push(req.body.user);
-      res.json(database[database.length - 1]);
+      res.json({
+        id: database[database.length - 1].id,
+        name: database[database.length - 1].name,
+        email: database[database.length - 1].email,
+        entries: database[database.length - 1].entries,
+        joined: database[database.length - 1].joined
+      });
     })
-    .catch(() => res.status(400).json({ status: "Error Registering User" }));
+    .catch(() => res.status(400).json({ status: false }));
 });
 
 app.put("/image", (req, res) => {
