@@ -2,6 +2,20 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const bcrypt = require("bcrypt-nodejs");
 
+const hash = string =>
+  new Promise((res, rej) => {
+    bcrypt.hash(string, null, null, (error, result) =>
+      error ? rej(error) : res(result)
+    );
+  });
+
+const checkHash = (string, hash) =>
+  new Promise((res, rej) => {
+    bcrypt.compare(string, hash, (error, result) =>
+      error || !result ? rej(error) : res(result)
+    );
+  });
+
 const app = express();
 
 app.use(bodyParser.json());
@@ -50,30 +64,21 @@ app.post("/signin", (req, res) => {
   if (!user.length) {
     res.status(400).json({ status: "Error Logging In" });
   } else {
-    bcrypt.compare(req.body.password, user[0].password, function(
-      error,
-      resolve
-    ) {
-      if (!error && resolve) {
-        res.json({ status: "Signing In" });
-      } else {
-        res.status(400).json({ status: "Error Logging In" });
-      }
-    });
+    checkHash(req.body.password, user[0].password)
+      .then(() => res.json({ status: "Signing In" }))
+      .catch(() => res.json({ Status: "Error Logging In" }));
   }
 });
 
 app.post("/register", (req, res) => {
   req.body.user.joined = new Date();
-  bcrypt.hash(req.body.user.password, null, null, function(err, hash) {
-    if (!err) {
+  hash(req.body.user.password)
+    .then(hash => {
       req.body.user.password = hash;
       database.push(req.body.user);
       res.json(database[database.length - 1]);
-    } else {
-      res.status(400).json({ status: "Error Registering" });
-    }
-  });
+    })
+    .catch(() => res.status(400).json({ status: "Error Registering User" }));
 });
 
 app.put("/image", (req, res) => {
