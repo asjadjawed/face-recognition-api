@@ -28,7 +28,9 @@ app.get("/", (req, res) => res.json(database));
 
 app.get("/profile/:id", (req, res) => {
   const user = database.filter(user => user.id === req.params.id);
-  user.length ? res.send(user) : res.status(400).send(user);
+  user.length
+    ? res.json(user)
+    : res.status(400).json({ status: "User not found" });
 });
 
 app.post("/signin", (req, res) => {
@@ -49,12 +51,17 @@ app.post("/register", (req, res) => {
 });
 
 app.put("/image", (req, res) => {
-  const user = database.filter(user => user.id === req.body.id);
-  if (user.length) {
-    user[0].entries++;
-    res.send(user);
-  } else {
-    res.status(400).send(user);
+  let found = false;
+  for (const [i, user] of database.entries()) {
+    if (user.id === req.body.id) {
+      found = true;
+      user.entries++;
+      res.json(database[i]);
+      break;
+    }
+  }
+  if (!found) {
+    res.status(400).json({ status: "User not found" });
   }
 });
 
