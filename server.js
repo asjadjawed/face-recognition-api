@@ -19,6 +19,10 @@ const checkHash = (string, hash) =>
 
 const app = express();
 
+app.use((req, res, next) => {
+  console.log(req.method, req.url);
+  next();
+});
 app.use(bodyParser.json());
 app.use(cors());
 
@@ -62,13 +66,13 @@ app.get("/profile/:id", (req, res) => {
 });
 
 app.post("/signin", (req, res) => {
-  const user = database.filter(user => user.id === req.body.id);
+  const user = database.filter(user => user.email === req.body.email);
   if (!user.length) {
-    res.status(400).json({ status: "Error Logging In" });
+    res.json({ status: false });
   } else {
     checkHash(req.body.password, user[0].password)
-      .then(() => res.json({ status: "Signing In" }))
-      .catch(() => res.json({ Status: "Error Logging In" }));
+      .then(() => res.json({ status: true }))
+      .catch(() => res.json({ status: false }));
   }
 });
 
