@@ -45,17 +45,6 @@ const database = [
   }
 ];
 
-// New User
-// {
-//   "user": {
-//       "id": "125",
-//       "name": "Jim",
-//       "email": "jim@gmail.com",
-//       "password": "pizza",
-//       "entries": 0
-//   }
-// }
-
 app.get("/", (req, res) => res.json(database));
 
 app.get("/profile/:id", (req, res) => {
@@ -104,7 +93,6 @@ app.post("/register", (req, res) => {
 app.put("/image", (req, res) => {
   let found = false;
   for (const [i, user] of database.entries()) {
-    console.log(req.body.id);
     if (user.id === req.body.id) {
       found = true;
       user.entries++;
