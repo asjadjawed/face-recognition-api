@@ -32,7 +32,7 @@ const database = [
     name: "John",
     email: "john@gmail.com",
     password: "$2a$10$/qThbK8nUDtZbJ2COrJCXesJWfgp8CmCRy93nW.KxMoQOgpOkR8cW", //cookies
-    entries: 0,
+    entries: 3,
     joined: new Date()
   },
   {
@@ -40,7 +40,7 @@ const database = [
     name: "Sally",
     email: "sally@gmail.com",
     password: "$2a$10$ijirY/VALOBJT6sT7ji3OeyVC71jGFF.8JpANyR70nqWmbQi5YB2S", //bananas
-    entries: 0,
+    entries: 3,
     joined: new Date()
   }
 ];
@@ -71,7 +71,15 @@ app.post("/signin", (req, res) => {
     res.json({ status: false });
   } else {
     checkHash(req.body.password, user[0].password)
-      .then(() => res.json({ status: true }))
+      .then(() =>
+        res.json({
+          id: user[0].id,
+          name: user[0].name,
+          email: user[0].email,
+          entries: user[0].entries,
+          joined: user[0].joined
+        })
+      )
       .catch(() => res.json({ status: false }));
   }
 });
@@ -96,10 +104,17 @@ app.post("/register", (req, res) => {
 app.put("/image", (req, res) => {
   let found = false;
   for (const [i, user] of database.entries()) {
+    console.log(req.body.id);
     if (user.id === req.body.id) {
       found = true;
       user.entries++;
-      res.json(database[i]);
+      res.json({
+        id: database[i].id,
+        name: database[i].name,
+        email: database[i].email,
+        entries: database[i].entries,
+        joined: database[i].joined
+      });
       break;
     }
   }
