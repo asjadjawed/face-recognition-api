@@ -3,32 +3,31 @@ const bodyParser = require("body-parser");
 const bcrypt = require("bcrypt-nodejs");
 const cors = require("cors");
 
-const hash = string =>
-  new Promise((res, rej) => {
+const genHash = string =>
+  new Promise((resolve, reject) => {
     bcrypt.hash(string, null, null, (error, result) =>
-      error ? rej(error) : res(result)
+      error
+        ? reject(error)
+        : !string
+        ? reject(new Error("null/undefined string argument"))
+        : resolve(result)
     );
   });
 
 const checkHash = (string, hash) =>
-  new Promise((res, rej) => {
+  new Promise((resolve, reject) => {
     bcrypt.compare(string, hash, (error, result) =>
-      error || !result ? rej(error) : res(result)
+      error
+        ? reject(error)
+        : !result
+        ? reject(new Error(false))
+        : resolve(result)
     );
   });
 
-const app = express();
-
-app.use((req, res, next) => {
-  console.log(req.method, req.url);
-  next();
-});
-app.use(bodyParser.json());
-app.use(cors());
-
 const database = [
   {
-    id: "123",
+    id: 123,
     name: "John",
     email: "john@gmail.com",
     password: "$2a$10$/qThbK8nUDtZbJ2COrJCXesJWfgp8CmCRy93nW.KxMoQOgpOkR8cW", //cookies
@@ -36,7 +35,7 @@ const database = [
     joined: new Date()
   },
   {
-    id: "124",
+    id: 124,
     name: "Sally",
     email: "sally@gmail.com",
     password: "$2a$10$ijirY/VALOBJT6sT7ji3OeyVC71jGFF.8JpANyR70nqWmbQi5YB2S", //bananas
@@ -45,23 +44,32 @@ const database = [
   }
 ];
 
-app.get("/", (req, res) => res.json(database));
+const app = express();
 
-app.get("/profile/:id", (req, res) => {
-  const user = database.filter(user => user.id === req.params.id);
+app.use((request, response, next) => {
+  console.log(request.method, request.url, new Date().toTimeString());
+  next();
+});
+app.use(bodyParser.json());
+app.use(cors());
+
+app.get("/", (request, response) => response.json(database));
+
+app.get("/profile/:id", (request, response) => {
+  const user = database.filter(user => user.id === Number(request.params.id));
   user.length
-    ? res.json(user)
-    : res.status(400).json({ status: "User not found" });
+    ? response.json(user[0])
+    : response.status(400).json({ status: "No user profile" });
 });
 
-app.post("/signin", (req, res) => {
-  const user = database.filter(user => user.email === req.body.email);
+app.post("/signin", (request, response) => {
+  const user = database.filter(user => user.email === request.body.email);
   if (!user.length) {
-    res.json({ status: false });
+    response.json({ status: false });
   } else {
-    checkHash(req.body.password, user[0].password)
+    checkHash(request.body.password, user[0].password)
       .then(() =>
-        res.json({
+        response.json({
           id: user[0].id,
           name: user[0].name,
           email: user[0].email,
@@ -69,17 +77,17 @@ app.post("/signin", (req, res) => {
           joined: user[0].joined
         })
       )
-      .catch(() => res.json({ status: false }));
+      .catch(() => response.json({ status: false }));
   }
 });
 
-app.post("/register", (req, res) => {
-  req.body.user.joined = new Date();
-  hash(req.body.user.password)
+app.post("/register", (request, response) => {
+  request.body.user.joined = new Date();
+  genHash(request.body.user.password)
     .then(hash => {
-      req.body.user.password = hash;
-      database.push(req.body.user);
-      res.json({
+      request.body.user.password = hash;
+      database.push(request.body.user);
+      response.json({
         id: database[database.length - 1].id,
         name: database[database.length - 1].name,
         email: database[database.length - 1].email,
@@ -87,16 +95,16 @@ app.post("/register", (req, res) => {
         joined: database[database.length - 1].joined
       });
     })
-    .catch(() => res.status(400).json({ status: false }));
+    .catch(() => response.status(400).json({ status: false }));
 });
 
-app.put("/image", (req, res) => {
+app.put("/image", (request, response) => {
   let found = false;
   for (const [i, user] of database.entries()) {
-    if (user.id === req.body.id) {
+    if (user.id === request.body.id) {
       found = true;
       user.entries++;
-      res.json({
+      response.json({
         id: database[i].id,
         name: database[i].name,
         email: database[i].email,
@@ -107,7 +115,7 @@ app.put("/image", (req, res) => {
     }
   }
   if (!found) {
-    res.status(400).json({ status: "User not found" });
+    response.status(400).json({ status: "User not found" });
   }
 });
 
