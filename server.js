@@ -2,6 +2,15 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const bcrypt = require("bcrypt-nodejs");
 const cors = require("cors");
+const knex = require("knex")({
+  client: "pg",
+  connection: {
+    host: "127.0.0.1",
+    user: "postgres",
+    password: "sqpants77",
+    database: "face-recognition"
+  }
+});
 
 const genHash = string =>
   new Promise((resolve, reject) => {
@@ -25,25 +34,6 @@ const checkHash = (string, hash) =>
     );
   });
 
-const database = [
-  {
-    id: 123,
-    name: "John",
-    email: "john@gmail.com",
-    password: "$2a$10$/qThbK8nUDtZbJ2COrJCXesJWfgp8CmCRy93nW.KxMoQOgpOkR8cW", //cookies
-    entries: 3,
-    joined: new Date()
-  },
-  {
-    id: 124,
-    name: "Sally",
-    email: "sally@gmail.com",
-    password: "$2a$10$ijirY/VALOBJT6sT7ji3OeyVC71jGFF.8JpANyR70nqWmbQi5YB2S", //bananas
-    entries: 3,
-    joined: new Date()
-  }
-];
-
 const app = express();
 
 app.use((request, response, next) => {
@@ -53,70 +43,106 @@ app.use((request, response, next) => {
 app.use(bodyParser.json());
 app.use(cors());
 
-app.get("/", (request, response) => response.json(database));
+app.get("/", (request, response) =>
+  knex
+    .select("users.id", "name", "email", "entries", "joined", "hash")
+    .from("users")
+    .innerJoin("login", "users.id", "login.user_id")
+    .then(userList => response.json(userList))
+);
 
 app.get("/profile/:id", (request, response) => {
-  const user = database.filter(user => user.id === Number(request.params.id));
-  user.length
-    ? response.json(user[0])
-    : response.status(400).json({ status: "No user profile" });
+  knex("users")
+    .select()
+    .where({ id: Number(request.params.id) })
+    .then(user => {
+      user.length
+        ? response.json(user[0])
+        : response.status(400).json({ status: "No user profile" });
+    })
+    .catch(() =>
+      response.status(400).json({ status: "Error fetching profile" })
+    );
 });
 
 app.post("/signin", (request, response) => {
-  const user = database.filter(user => user.email === request.body.email);
-  if (!user.length) {
-    response.json({ status: false });
-  } else {
-    checkHash(request.body.password, user[0].password)
-      .then(() =>
-        response.json({
-          id: user[0].id,
-          name: user[0].name,
-          email: user[0].email,
-          entries: user[0].entries,
-          joined: user[0].joined
-        })
-      )
-      .catch(() => response.json({ status: false }));
-  }
+  let signInUser = [];
+  knex
+    .select("users.id", "name", "email", "entries", "joined", "hash")
+    .from("users")
+    .innerJoin("login", "users.id", "login.user_id")
+    .where({ email: request.body.email })
+    .then(userInfo => {
+      signInUser = userInfo;
+      if (!userInfo.length) {
+        throw new Error("user not found");
+      }
+    })
+    .then(() => checkHash(request.body.password, signInUser[0].hash))
+    .then(() =>
+      response.json({
+        id: signInUser[0].id,
+        name: signInUser[0].name,
+        email: signInUser[0].email,
+        entries: signInUser[0].entries,
+        joined: signInUser[0].joined
+      })
+    )
+    .catch(() => response.status(400).json({ status: false }));
 });
 
 app.post("/register", (request, response) => {
-  request.body.user.joined = new Date();
+  let returnedUser = {};
   genHash(request.body.user.password)
-    .then(hash => {
-      request.body.user.password = hash;
-      database.push(request.body.user);
-      response.json({
-        id: database[database.length - 1].id,
-        name: database[database.length - 1].name,
-        email: database[database.length - 1].email,
-        entries: database[database.length - 1].entries,
-        joined: database[database.length - 1].joined
-      });
+    .then(hashedPass => Object.assign(returnedUser, { password: hashedPass }))
+    .then(() =>
+      knex("users")
+        .returning("*")
+        .insert({
+          name: request.body.user.name,
+          email: request.body.user.email,
+          joined: new Date()
+        })
+    )
+    .then(registeredUser => {
+      Object.assign(returnedUser, registeredUser[0]);
     })
+    .then(() =>
+      knex("login").insert({
+        user_id: returnedUser.id,
+        hash: returnedUser.password
+      })
+    )
+    .then(() =>
+      response.json({
+        id: returnedUser.id,
+        name: returnedUser.name,
+        email: returnedUser.email,
+        entries: returnedUser.entries,
+        joined: returnedUser.joined
+      })
+    )
     .catch(() => response.status(400).json({ status: false }));
 });
 
 app.put("/image", (request, response) => {
-  let found = false;
-  for (const [i, user] of database.entries()) {
-    if (user.id === request.body.id) {
-      found = true;
-      user.entries++;
+  const { id } = request.body;
+  const returnedUser = {};
+  knex("users")
+    .where({ id: Number(id) })
+    .increment("entries", 1)
+    .returning("*")
+    .then(updatedUser => {
+      Object.assign(returnedUser, updatedUser[0]);
       response.json({
-        id: database[i].id,
-        name: database[i].name,
-        email: database[i].email,
-        entries: database[i].entries,
-        joined: database[i].joined
+        id: returnedUser.id,
+        name: returnedUser.name,
+        email: returnedUser.email,
+        entries: returnedUser.entries,
+        joined: returnedUser.joined
       });
-      break;
-    }
-  }
-  if (!found) {
-    response.status(400).json({ status: "User not found" });
-  }
+    })
+    .catch(() => response.status(400).json({ status: "Error updating entry" }));
 });
 
 app.listen(5000, () => console.log("Server running on port 5000"));
