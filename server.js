@@ -1,7 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const bcrypt = require("bcrypt-nodejs");
 const cors = require("cors");
+const { genHash, checkHash } = require("./bcryptPromises");
 const knex = require("knex")({
   client: "pg",
   connection: {
@@ -12,27 +12,15 @@ const knex = require("knex")({
   }
 });
 
-const genHash = string =>
-  new Promise((resolve, reject) => {
-    bcrypt.hash(string, null, null, (error, result) =>
-      error
-        ? reject(error)
-        : !string
-        ? reject(new Error("null/undefined string argument"))
-        : resolve(result)
-    );
-  });
-
-const checkHash = (string, hash) =>
-  new Promise((resolve, reject) => {
-    bcrypt.compare(string, hash, (error, result) =>
-      error
-        ? reject(error)
-        : !result
-        ? reject(new Error(false))
-        : resolve(result)
-    );
-  });
+const userResponse = userInfo => {
+  return {
+    id: userInfo.id,
+    name: userInfo.name,
+    email: userInfo.email,
+    entries: userInfo.entries,
+    joined: userInfo.joined
+  };
+};
 
 const app = express();
 
@@ -79,15 +67,7 @@ app.post("/signin", (request, response) => {
       }
     })
     .then(() => checkHash(request.body.password, signInUser[0].hash))
-    .then(() =>
-      response.json({
-        id: signInUser[0].id,
-        name: signInUser[0].name,
-        email: signInUser[0].email,
-        entries: signInUser[0].entries,
-        joined: signInUser[0].joined
-      })
-    )
+    .then(() => response.json(userResponse(signInUser[0])))
     .catch(() => response.status(400).json({ status: false }));
 });
 
@@ -113,15 +93,7 @@ app.post("/register", (request, response) => {
         hash: returnedUser.password
       })
     )
-    .then(() =>
-      response.json({
-        id: returnedUser.id,
-        name: returnedUser.name,
-        email: returnedUser.email,
-        entries: returnedUser.entries,
-        joined: returnedUser.joined
-      })
-    )
+    .then(() => response.json(userResponse(returnedUser)))
     .catch(() => response.status(400).json({ status: false }));
 });
 
@@ -134,13 +106,7 @@ app.put("/image", (request, response) => {
     .returning("*")
     .then(updatedUser => {
       Object.assign(returnedUser, updatedUser[0]);
-      response.json({
-        id: returnedUser.id,
-        name: returnedUser.name,
-        email: returnedUser.email,
-        entries: returnedUser.entries,
-        joined: returnedUser.joined
-      });
+      response.json(userResponse(returnedUser));
     })
     .catch(() => response.status(400).json({ status: "Error updating entry" }));
 });
