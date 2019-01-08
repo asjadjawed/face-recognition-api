@@ -15,7 +15,6 @@ const handleImage = (request, response, knex, userResponse) => {
         boxes = res.outputs[0].data.regions.map(
           box => box.region_info.bounding_box
         );
-        console.log(boxes);
       } else {
         throw new Error("Face not found");
       }
@@ -27,7 +26,7 @@ const handleImage = (request, response, knex, userResponse) => {
         .returning("*")
         .then(updatedUser => {
           Object.assign(returnedUser, updatedUser[0]);
-          console.log(userResponse(returnedUser), boxes);
+
           response.json({ user: userResponse(returnedUser), boxes });
         })
     )
