@@ -14,10 +14,11 @@ const { handleImage } = require("./controllers/image");
 const knex = require("knex")({
   client: "pg",
   connection: {
-    host: "127.0.0.1",
-    user: "postgres",
-    password: "hunter2",
-    database: "face-recognition"
+    host: "ec2-107-20-183-142.compute-1.amazonaws.com",
+    user: "tadbyhedseqsno",
+    password:
+      "4aec518a727e081cfd4b8aa2e645c81a693a2ec6f7fcb038fe09ca6772b577f6",
+    database: "d3moqgm7oihtkv"
   }
 });
 
