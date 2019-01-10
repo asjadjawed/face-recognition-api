@@ -17,6 +17,9 @@ lib-cov
 # Coverage directory used by tools like istanbul
 coverage
 
+# testing
+/coverage
+
 # nyc test coverage
 .nyc_output
 
@@ -35,6 +38,8 @@ build/Release
 # Dependency directories
 node_modules/
 jspm_packages/
+/.pnp
+.pnp.js
 
 # Typescript v1 declaration files
 typings/
@@ -57,8 +62,18 @@ typings/
 # dotenv environment variables file
 .env
 
+# production
+/build
+
 # next.js build output
 .next
 
 # Visual Studio Code
 .vscode
+
+# misc
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
