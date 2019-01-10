@@ -1,4 +1,4 @@
-const handleRoot = (request, response, knex) =>
+const handleUsers = (request, response, knex) =>
   knex
     .select("users.id", "name", "email", "entries", "joined", "hash")
     .from("users")
@@ -6,5 +6,5 @@ const handleRoot = (request, response, knex) =>
     .then(userList => response.json(userList));
 
 module.exports = {
-  handleRoot
+  handleUsers
 };

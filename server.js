@@ -5,7 +5,7 @@ const cors = require("cors");
 const { genHash, checkHash } = require("./bcryptPromises");
 const { userResponse } = require("./userResponse");
 
-const { handleRoot } = require("./controllers/root");
+const { handleUsers } = require("./controllers/users");
 const { handleProfile } = require("./controllers/profile");
 const { handleSignIn } = require("./controllers/signIn");
 const { handleRegister } = require("./controllers/register");
@@ -31,7 +31,13 @@ app.use((request, response, next) => {
 app.use(bodyParser.json());
 app.use(cors());
 
-app.get("/", (request, response) => handleRoot(request, response, knex));
+app.get("/", (request, response) =>
+  response.send(
+    "<p>Face Recognition API</p><p><a href=`https://asjadjawed.github.io/face-recognition-app/`>App Location</a></p>"
+  )
+);
+
+app.get("/users", (request, response) => handleUsers(request, response, knex));
 
 app.get("/profile/:id", (request, response) =>
   handleProfile(request, response, knex)
