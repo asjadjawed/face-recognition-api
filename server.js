@@ -16,7 +16,7 @@ const knex = require("knex")({
   connection: {
     host: "127.0.0.1",
     user: "postgres",
-    password: "sqpants77",
+    password: "hunter2",
     database: "face-recognition"
   }
 });
