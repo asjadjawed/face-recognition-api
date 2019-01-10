@@ -33,7 +33,7 @@ app.use(cors());
 
 app.get("/", (request, response) =>
   response.send(
-    "<p>Face Recognition API</p><p><a href=`https://asjadjawed.github.io/face-recognition-app/`>App Location</a></p>"
+    "<p>Face Recognition API</p><p>App Location: https://asjadjawed.github.io/face-recognition-app/</p>"
   )
 );
 
