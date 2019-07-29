@@ -2,8 +2,17 @@ const Clarifai = require("clarifai");
 
 const app = new Clarifai.App({
   apiKey: process.env.CLARIFAI_KEY
+  // apiKey: require("../temp").key
 });
 
+/**
+ * Receives user info and image in request, returns facials coordinates
+ * and increments user entry else sends fail response *
+ * @param {Request} request
+ * @param {Response} response
+ * @param {Knex} knex - knex connection
+ * @param {Function} userResponse - the user mapping function
+ */
 const handleImage = (request, response, knex, userResponse) => {
   const { id, input } = request.body;
   let boxes = [];

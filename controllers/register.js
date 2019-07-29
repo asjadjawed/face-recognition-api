@@ -1,11 +1,19 @@
+/**
+ * Stores new user in database
+ *
+ * @param {Request} request
+ * @param {Response} response
+ * @param {Function} genHash - the genHash Function: generates new hash
+ * @param {Knex} knex - the Knex connection
+ * @param {Function} userResponse - the userResponse function
+ */
 const handleRegister = (request, response, genHash, knex, userResponse) => {
-  console.log("reaching");
   let returnedUser = {};
   genHash(request.body.user.password)
     .then(hashedPass => Object.assign(returnedUser, { password: hashedPass }))
     .then(() =>
       knex("users")
-        .returning("*")
+        .returning("*") // returns the inserted record
         .insert({
           name: request.body.user.name,
           email: request.body.user.email,

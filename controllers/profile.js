@@ -1,3 +1,10 @@
+/**
+ * Returns data on specific user return Promise resolves to JSON data of user / error
+ *
+ * @param {Request} request
+ * @param {Response} response
+ * @param {Knex} knex - the knex connection
+ */
 const handleProfile = (request, response, knex) => {
   knex("users")
     .select()
